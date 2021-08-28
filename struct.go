@@ -1,5 +1,14 @@
 package main
 
+import "time"
+
+type SpotyfyError struct {
+    Error struct {
+        Status  int    `json:"status"`
+        Message string `json:"message"`
+    } `json:"error"`
+}
+
 type SpotifyPlaylist struct {
     Href  string `json:"href"`
     Items []struct {
