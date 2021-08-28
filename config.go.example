@@ -1,0 +1,4 @@
+package main
+
+var SpotifyAPI = "test"
+var BandcampAPI = "ree"
