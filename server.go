@@ -4,7 +4,33 @@ import (
     "fmt"
     "log"
     "net/http"
+    "encoding/json"
 )
+
+var MyClient = &http.Client{}
+
+/*
+id de la playlist
+*/
+func getListPlaylist(id string) {
+    req, _ := http.NewRequest("GET", "https://api.spotify.com/v1/playlists/"+id+"/tracks", nil)
+    req.Header.Add("Accept", "application/json")
+    req.Header.Add("Content-Type", "application/json")
+    req.Header.Add("Authorization", SpotifyAPI)
+
+    res, err := MyClient.Do(req)
+    if err != nil {
+        fmt.Printf("error:", err)
+        return
+    }
+
+    defer res.Body.Close()
+    decoder := json.NewDecoder(res.Body)
+
+    for token, _ :=  decoder.Token(); token != nil; token, _ =  decoder.Token() {
+        fmt.Printf("value:", token)
+    }
+}
 
 func formHandler(w http.ResponseWriter, r *http.Request) {
     if err := r.ParseForm(); err != nil {
@@ -12,7 +38,7 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    fmt.Fprintf(w, "POST request successful")
+    fmt.Fprintf(w, "POST request successful\n")
     type_id := r.FormValue("type-id")
     id := r.FormValue("id")
 
@@ -35,6 +61,9 @@ func index(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+    getListPlaylist("6OGZZ8tI45MB1d3EUEqNKI")
+    return
+
     fileServer := http.FileServer(http.Dir("./static"))
     http.Handle("/", fileServer)
     http.HandleFunc("/hello", index)
