@@ -1,21 +1,47 @@
 package main
 
 import (
-//    "bytes"
     "fmt"
     "log"
-//    "time"
+    "strings"
     "net/http"
     "encoding/json"
+    "github.com/undertideco/bandcamp"
 )
 
 var MyClient = &http.Client{}
+
+type BandcampAlbum struct {
+    find bool
+    url string
+}
+
+/* 
+check artist and album 
+items[x].track.album.name et items[x].track.album.artists[0].name
+*/
+func testBandcamp(album string, artist string) BandcampAlbum{
+    bandcampClient := bandcamp.NewClient()
+
+    results, err := bandcampClient.Search(album)
+    if err != nil {
+        log.Println(err)
+        return BandcampAlbum{false, ""}
+    }
+
+    if (strings.Contains(results[0].Title, album) || strings.Contains(album, results[0].Title)) && strings.Compare(results[0].Artist, artist) == 0 {
+        return BandcampAlbum{true, results[0].URL}
+    } else {
+        return BandcampAlbum{false, ""}
+    }
+}
 
 /*
 id de la playlist
 */
 func getListPlaylist(id string) {
-    req, _ := http.NewRequest("GET", "https://api.spotify.com/v1/playlists/"+id+"/tracks", nil)
+    //req, _ := http.NewRequest("GET", "https://api.spotify.com/v1/playlists/"+id+"/tracks", nil)
+    req, _ := http.NewRequest("GET", "http://localhost:8001", nil)
     req.Header.Add("Accept", "application/json")
     req.Header.Add("Content-Type", "application/json")
     req.Header.Add("Authorization", SpotifyAPI)
@@ -37,6 +63,15 @@ func getListPlaylist(id string) {
     if err != nil {
         fmt.Printf("error:", err)
         return
+    }
+
+    tmp := BandcampAlbum{}
+
+    for i := 0; i < len(ree.Items); i++ {
+        tmp = testBandcamp(ree.Items[i].Track.Album.Name, ree.Items[i].Track.Album.Artists[0].Name)
+        if tmp.find {
+            fmt.Printf("Find !! url: %s\n", tmp.url)
+        }
     }
 
     fmt.Printf(ree.Href)
