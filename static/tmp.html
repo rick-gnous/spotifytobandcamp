@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<html>
+    <body>
+        <h1>Spotify To Bandcamp</h1>
+        <p>Recherche dans une playlist les artistes se trouvant aussi sur Bandcamp !</p>
+        <hr />
+
+        <div id="my-list">
+
+        </div>
+    </body>
+    <script>
+        async function test() {
+            const data = await fetch('/refresh').then(response => response.json());
+            console.log(data.url);
+            if (data != null) {
+                for (const elem of data.url) {
+                    let tmp = document.createTextNode(elem);
+                    let newP = document.createElement("p");
+                    newP.appendChild(tmp);
+                    document.getElementById("my-list").appendChild(newP)
+                }
+            }
+        }
+        setInterval(test, 3000);
+    </script>
+<html>

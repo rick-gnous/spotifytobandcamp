@@ -9,12 +9,22 @@ import (
     "github.com/undertideco/bandcamp"
 )
 
-var MyClient = &http.Client{}
-
 type BandcampAlbum struct {
     find bool
     url string
 }
+
+type RespBandcamp struct {
+    Url []string `json:"url"`
+}
+
+func (rp *RespBandcamp) Add(str string) []string {
+    rp.Url = append(rp.Url, str)
+    return rp.Url
+}
+
+var MyClient = &http.Client{}
+var MyResp = &RespBandcamp{}
 
 /* 
 check artist and album 
@@ -77,7 +87,12 @@ func getListPlaylist(id string) {
         tmp = testBandcamp(ree.Items[i].Track.Album.Name,
                            ree.Items[i].Track.Album.Artists[0].Name)
         if tmp.find {
-            fmt.Printf("Find !! url: %s\n", tmp.url)
+            //fmt.Printf("Find !! url: %s\n", tmp.url)
+            //MyResp.url = append(MyResp.url, tmp.url)
+            //MyResp.url = append (MyResp.url, tmp.url)
+            MyResp.Add(tmp.url)
+            //fmt.Printf("tmp %s \n", MyResp.url[0])
+            //fmt.Printf("len=%d cap=%d %v\n", len(MyResp.url), cap(MyResp.url), MyResp.url)
         }
     }
 }
@@ -88,12 +103,16 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    fmt.Fprintf(w, "POST request successful\n")
-    type_id := r.FormValue("type-id")
-    id := r.FormValue("id")
+    //fmt.Fprintf(w, "POST request successful\n")
+    //type_id := r.FormValue("type-id")
+    //id := r.FormValue("id")
 
-    fmt.Fprintf(w, "Type ID = %s\n", type_id)
-    fmt.Fprintf(w, "ID = %s\n", id)
+    //fmt.Fprintf(w, "Type ID = %s\n", type_id)
+    //fmt.Fprintf(w, "ID = %s\n", id)
+
+    w.Header().Set("Location", "/tmp.html")
+    w.WriteHeader(http.StatusSeeOther)
+    go getListPlaylist("6OGZZ8tI45MB1d3EUEqNKI")
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -114,12 +133,20 @@ func test(w http.ResponseWriter, r *http.Request) {
     getListPlaylist("6OGZZ8tI45MB1d3EUEqNKI")
 }
 
+func getNew(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(MyResp)
+    MyResp.Url = nil
+}
+
 func main() {
     fileServer := http.FileServer(http.Dir("./static"))
     http.Handle("/", fileServer)
     http.HandleFunc("/hello", index)
     http.HandleFunc("/back", formHandler)
     http.HandleFunc("/test", test)
+    http.HandleFunc("/refresh", getNew)
 
     fmt.Printf("Starting the server…\n")
     if err := http.ListenAndServe(":8080", nil); err != nil {
