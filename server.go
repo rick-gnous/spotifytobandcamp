@@ -40,8 +40,14 @@ func testBandcamp(album string, artist string) BandcampAlbum{
 id de la playlist
 */
 func getListPlaylist(id string) {
-    //req, _ := http.NewRequest("GET", "https://api.spotify.com/v1/playlists/"+id+"/tracks", nil)
-    req, _ := http.NewRequest("GET", "http://localhost:8001", nil)
+    /*
+    req, _ := http.NewRequest("GET",
+                              "https://api.spotify.com/v1/playlists/"+id+"/tracks",
+                              nil)
+    */
+    req, _ := http.NewRequest("GET",
+                              "http://localhost:8001",
+                              nil)
     req.Header.Add("Accept", "application/json")
     req.Header.Add("Content-Type", "application/json")
     req.Header.Add("Authorization", SpotifyAPI)
@@ -68,13 +74,12 @@ func getListPlaylist(id string) {
     tmp := BandcampAlbum{}
 
     for i := 0; i < len(ree.Items); i++ {
-        tmp = testBandcamp(ree.Items[i].Track.Album.Name, ree.Items[i].Track.Album.Artists[0].Name)
+        tmp = testBandcamp(ree.Items[i].Track.Album.Name,
+                           ree.Items[i].Track.Album.Artists[0].Name)
         if tmp.find {
             fmt.Printf("Find !! url: %s\n", tmp.url)
         }
     }
-
-    fmt.Printf(ree.Href)
 }
 
 func formHandler(w http.ResponseWriter, r *http.Request) {
@@ -105,14 +110,16 @@ func index(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "Helo!")
 }
 
-func main() {
+func test(w http.ResponseWriter, r *http.Request) {
     getListPlaylist("6OGZZ8tI45MB1d3EUEqNKI")
-    return
+}
 
+func main() {
     fileServer := http.FileServer(http.Dir("./static"))
     http.Handle("/", fileServer)
     http.HandleFunc("/hello", index)
     http.HandleFunc("/back", formHandler)
+    http.HandleFunc("/test", test)
 
     fmt.Printf("Starting the server…\n")
     if err := http.ListenAndServe(":8080", nil); err != nil {
