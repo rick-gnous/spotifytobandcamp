@@ -21,9 +21,13 @@
                     let tmp = document.createTextNode(elem);
                     let newP = document.createElement("p");
                     newP.appendChild(tmp);
-                    document.getElementById("my-list").appendChild(newP)
+                    document.getElementById("my-list").appendChild(newP);
                 }
             }
+        }
+
+        window.onbeforeunload = function() {
+            return "Vous perdrez tous les artistes trouvés en rafraichissant la page."
         }
         setInterval(test, 3000);
     </script>
