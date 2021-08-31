@@ -15,20 +15,54 @@
             <p><a href="https://codepen.io/brunjo/pen/bNEWjV">Code Source du loader</a> sous <a href="https://blog.codepen.io/documentation/licensing/">licence MIT</a>.</p>
         </div>
 
-        <div id="my-list">
-
+        <div>
+            <table id="my-list">
+                <tr>
+                    <th>Artiste</th>
+                    <th>Album</th>
+                    <th>Spotify</th>
+                    <th>Bandcamp</th>
+                </tr>
+            </table>
         </div>
     </body>
     <script>
+        const spotifyText = document.createTextNode("Spotify");
+        const bandcampText = document.createTextNode("Bandcamp");
+        const tab = document.getElementById("my-list");
+
         async function test() {
             const data = await fetch('/refresh').then(response => response.json());
             if (data != null) {
-                if (data.url != null) {
-                    for (const elem of data.url) {
+                if (data.urls != null) {
+                    var newRow, artist, album, tmpLink;
+                    for (const elem of data.urls) {
+                        artist = document.createTextNode(elem.artist);
+                        album = document.createTextNode(elem.album);
+                        tmpLink = document.createElement("a");
+                        tmpLink.appendChild(spotifyText.cloneNode());
+                        tmpLink.title = "Lien Spotify";
+                        tmpLink.href = elem.spotifyurl;
+
+                        /*
                         let tmp = document.createTextNode(elem);
                         let newP = document.createElement("p");
                         newP.appendChild(tmp);
                         document.getElementById("my-list").appendChild(newP);
+                        */
+                        newRow = tab.insertRow(-1);
+                        newRow.insertCell(0).appendChild(artist);
+                        newRow.insertCell(1).appendChild(album);
+
+                        newRow.insertCell(2).appendChild(tmpLink);
+
+                        tmpLink = document.createElement("a");
+                        tmpLink.appendChild(bandcampText.cloneNode());
+                        tmpLink.title = "Lien Bandcamp";
+                        tmpLink.href = elem.bandcampurl;
+                        newRow.insertCell(3).appendChild(tmpLink);
+
+
                     }
                 }
 

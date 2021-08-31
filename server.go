@@ -15,15 +15,26 @@ type BandcampAlbum struct {
     url string
 }
 
+type UrlBandcamp struct {
+    Artiste string `json:"artist"`
+    Album string `json:"album"`
+    SpotifyUrl string `json:"spotifyurl"`
+    BandcampUrl string `json:"bandcampurl"`
+}
+
+func newUrlBandcamp(auteur, album, spo, band string) UrlBandcamp {
+    return UrlBandcamp{Artiste: auteur, Album: album, SpotifyUrl: spo, BandcampUrl: band}
+}
+
 type RespBandcamp struct {
     Done int `json:"done"`
     Todo int `json:"todo"`
-    Url []string `json:"url"`
+    Urls []UrlBandcamp  `json:"urls"`
 }
 
-func (rp *RespBandcamp) Add(str string) []string {
-    rp.Url = append(rp.Url, str)
-    return rp.Url
+func (rp *RespBandcamp) Add(tmp UrlBandcamp) []UrlBandcamp {
+    rp.Urls = append(rp.Urls, tmp)
+    return rp.Urls
 }
 
 var MyClient = &http.Client{}
@@ -76,26 +87,31 @@ func getListPlaylist(id string) {
         return
     }
 
-    ree := &SpotifyPlaylist{}
+    playlist := &SpotifyPlaylist{}
     defer res.Body.Close()
-    err = json.NewDecoder(res.Body).Decode(&ree)
+    err = json.NewDecoder(res.Body).Decode(&playlist)
     if err != nil {
         fmt.Printf("error:", err)
         return
     }
 
     tmp := BandcampAlbum{}
-    MyResp.Todo = len(ree.Items)
+    MyResp.Todo = len(playlist.Items)
     MyResp.Done = 0
 
-    for i := 0; i < len(ree.Items); i++ {
-        tmp = testBandcamp(ree.Items[i].Track.Album.Name,
-                           ree.Items[i].Track.Album.Artists[0].Name)
+    for i := 0; i < len(playlist.Items); i++ {
+        tmp = testBandcamp(playlist.Items[i].Track.Album.Name,
+                           playlist.Items[i].Track.Album.Artists[0].Name)
         if tmp.find {
             //fmt.Printf("Find !! url: %s\n", tmp.url)
             //MyResp.url = append(MyResp.url, tmp.url)
             //MyResp.url = append (MyResp.url, tmp.url)
-            MyResp.Add(tmp.url)
+            //MyResp.Add(tmp.url)
+            MyResp.Add(newUrlBandcamp(
+                playlist.Items[i].Track.Album.Artists[0].Name,
+                playlist.Items[i].Track.Album.Name,
+                playlist.Items[i].Track.Album.ExternalUrls.Spotify,
+                tmp.url))
             //fmt.Printf("tmp %s \n", MyResp.url[0])
             //fmt.Printf("len=%d cap=%d %v\n", len(MyResp.url), cap(MyResp.url), MyResp.url)
         }
@@ -148,7 +164,7 @@ func getNew(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(MyResp)
-    MyResp.Url = nil
+    MyResp.Urls = nil
 }
 
 func main() {
