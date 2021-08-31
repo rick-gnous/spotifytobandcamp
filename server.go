@@ -120,7 +120,7 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
     //fmt.Fprintf(w, "Type ID = %s\n", type_id)
     //fmt.Fprintf(w, "ID = %s\n", id)
 
-    w.Header().Set("Location", "/tmp.html")
+    w.Header().Set("Location", "/feudecamp.html")
     w.WriteHeader(http.StatusSeeOther)
     //go getListPlaylist("6OGZZ8tI45MB1d3EUEqNKI")
     go getListPlaylist(r.FormValue("id"))
