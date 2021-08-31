@@ -3,9 +3,14 @@ h1 {
 }
 
 td, th {
-    border: 3px solid;
+    border: 3px solid white;
 }
 
 tr:nth-child(even) {
     background-color: #eee;
+}
+
+footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
 }
