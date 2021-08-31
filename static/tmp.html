@@ -8,6 +8,12 @@
         <p>Recherche dans une playlist les artistes se trouvant aussi sur Bandcamp !</p>
         <hr />
 
+        <div id="inf-loader">
+            <div id="loader"></div>
+            <p>La playlist est en cours de traitement [<span id="nb-fait"></span>/<span id="nb-total"></span>]…</p>
+            <p>[Code Source du loader](https://codepen.io/brunjo/pen/bNEWjV) sous [licence MIT](https://blog.codepen.io/documentation/licensing/).</p>
+        </div>
+
         <div id="my-list">
 
         </div>
@@ -15,20 +21,30 @@
     <script>
         async function test() {
             const data = await fetch('/refresh').then(response => response.json());
-            console.log(data.url);
             if (data != null) {
-                for (const elem of data.url) {
-                    let tmp = document.createTextNode(elem);
-                    let newP = document.createElement("p");
-                    newP.appendChild(tmp);
-                    document.getElementById("my-list").appendChild(newP);
+                if (data.done === data.todo) {
+                    document.getElementById("inf-loader").remove();
+                    clearInterval(refreshList);
                 }
+
+                if (data.url != null) {
+                    for (const elem of data.url) {
+                        let tmp = document.createTextNode(elem);
+                        let newP = document.createElement("p");
+                        newP.appendChild(tmp);
+                        document.getElementById("my-list").appendChild(newP);
+                    }
+                }
+
+                document.getElementById("nb-fait").textContent = data.done;
+                document.getElementById("nb-total").textContent = data.todo;
             }
         }
 
         window.onbeforeunload = function() {
             return "Vous perdrez tous les artistes trouvés en rafraichissant la page."
         }
-        setInterval(test, 3000);
+
+        const refreshList = setInterval(test, 3000);
     </script>
 <html>

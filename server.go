@@ -3,6 +3,7 @@ package main
 import (
     "fmt"
     "log"
+    "time"
     "strings"
     "net/http"
     "encoding/json"
@@ -15,6 +16,8 @@ type BandcampAlbum struct {
 }
 
 type RespBandcamp struct {
+    Done int `json:"done"`
+    Todo int `json:"todo"`
     Url []string `json:"url"`
 }
 
@@ -54,7 +57,7 @@ func getListPlaylist(id string) {
     req, _ := http.NewRequest("GET",
                               "https://api.spotify.com/v1/playlists/"+id+"/tracks",
                               nil)
-    */
+                              */
     req, _ := http.NewRequest("GET",
                               "http://localhost:8001",
                               nil)
@@ -82,6 +85,8 @@ func getListPlaylist(id string) {
     }
 
     tmp := BandcampAlbum{}
+    MyResp.Todo = len(ree.Items)
+    MyResp.Done = 0
 
     for i := 0; i < len(ree.Items); i++ {
         tmp = testBandcamp(ree.Items[i].Track.Album.Name,
@@ -94,7 +99,12 @@ func getListPlaylist(id string) {
             //fmt.Printf("tmp %s \n", MyResp.url[0])
             //fmt.Printf("len=%d cap=%d %v\n", len(MyResp.url), cap(MyResp.url), MyResp.url)
         }
+        if i % 25 == 0 {
+            time.Sleep(5 * time.Second)
+        }
+        MyResp.Done++
     }
+    fmt.Printf("\nFinish\n")
 }
 
 func formHandler(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +122,8 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
 
     w.Header().Set("Location", "/tmp.html")
     w.WriteHeader(http.StatusSeeOther)
-    go getListPlaylist("6OGZZ8tI45MB1d3EUEqNKI")
+    //go getListPlaylist("6OGZZ8tI45MB1d3EUEqNKI")
+    go getListPlaylist(r.FormValue("id"))
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
