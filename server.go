@@ -10,33 +10,6 @@ import (
     "github.com/undertideco/bandcamp"
 )
 
-type BandcampAlbum struct {
-    find bool
-    url string
-}
-
-type UrlBandcamp struct {
-    Artiste string `json:"artist"`
-    Album string `json:"album"`
-    SpotifyUrl string `json:"spotifyurl"`
-    BandcampUrl string `json:"bandcampurl"`
-}
-
-func newUrlBandcamp(auteur, album, spo, band string) UrlBandcamp {
-    return UrlBandcamp{Artiste: auteur, Album: album, SpotifyUrl: spo, BandcampUrl: band}
-}
-
-type RespBandcamp struct {
-    Done int `json:"done"`
-    Todo int `json:"todo"`
-    Urls []UrlBandcamp  `json:"urls"`
-}
-
-func (rp *RespBandcamp) Add(tmp UrlBandcamp) []UrlBandcamp {
-    rp.Urls = append(rp.Urls, tmp)
-    return rp.Urls
-}
-
 var MyClient = &http.Client{}
 var MyResp = &RespBandcamp{}
 
@@ -129,20 +102,12 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    //fmt.Fprintf(w, "POST request successful\n")
-    //type_id := r.FormValue("type-id")
-    //id := r.FormValue("id")
-
-    //fmt.Fprintf(w, "Type ID = %s\n", type_id)
-    //fmt.Fprintf(w, "ID = %s\n", id)
-
     w.Header().Set("Location", "/feudecamp.html")
     w.WriteHeader(http.StatusSeeOther)
-    //go getListPlaylist("6OGZZ8tI45MB1d3EUEqNKI")
     go getListPlaylist(r.FormValue("id"))
 }
 
-func index(w http.ResponseWriter, r *http.Request) {
+func hello(w http.ResponseWriter, r *http.Request) {
     if r.URL.Path != "/hello" {
         http.Error(w, "404", http.StatusNotFound)
         return
@@ -156,10 +121,6 @@ func index(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "Helo!")
 }
 
-func test(w http.ResponseWriter, r *http.Request) {
-    getListPlaylist("6OGZZ8tI45MB1d3EUEqNKI")
-}
-
 func getNew(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusCreated)
@@ -170,9 +131,8 @@ func getNew(w http.ResponseWriter, r *http.Request) {
 func main() {
     fileServer := http.FileServer(http.Dir("./static"))
     http.Handle("/", fileServer)
-    http.HandleFunc("/hello", index)
+    http.HandleFunc("/hello", hello)
     http.HandleFunc("/back", formHandler)
-    http.HandleFunc("/test", test)
     http.HandleFunc("/refresh", getNew)
 
     fmt.Printf("Starting the server…\n")

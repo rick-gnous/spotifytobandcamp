@@ -2,6 +2,33 @@ package main
 
 import "time"
 
+type BandcampAlbum struct {
+    find bool
+    url string
+}
+
+type UrlBandcamp struct {
+    Artiste string `json:"artist"`
+    Album string `json:"album"`
+    SpotifyUrl string `json:"spotifyurl"`
+    BandcampUrl string `json:"bandcampurl"`
+}
+
+func newUrlBandcamp(auteur, album, spo, band string) UrlBandcamp {
+    return UrlBandcamp{Artiste: auteur, Album: album, SpotifyUrl: spo, BandcampUrl: band}
+}
+
+type RespBandcamp struct {
+    Done int `json:"done"`
+    Todo int `json:"todo"`
+    Urls []UrlBandcamp  `json:"urls"`
+}
+
+func (rp *RespBandcamp) Add(tmp UrlBandcamp) []UrlBandcamp {
+    rp.Urls = append(rp.Urls, tmp)
+    return rp.Urls
+}
+
 type SpotifyPlaylist struct {
     Href  string `json:"href"`
     Items []struct {
