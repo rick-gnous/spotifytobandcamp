@@ -112,7 +112,7 @@ type SpotifyItem struct {
 
 type SpotifyPlaylist struct {
     Href  string `json:"href"`
-    Items SpotifyItem  `json:"items"`
+    Items []SpotifyItem  `json:"items"`
     Limit    int         `json:"limit"`
     Next     string      `json:"next"`
     Offset   int         `json:"offset"`
