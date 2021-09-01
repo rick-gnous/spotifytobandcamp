@@ -18,15 +18,32 @@ func newUrlBandcamp(auteur, album, spo, band string) UrlBandcamp {
     return UrlBandcamp{Artiste: auteur, Album: album, SpotifyUrl: spo, BandcampUrl: band}
 }
 
+func newUrlWoBandcamp(auteur, album, spo string) UrlBandcamp {
+    return UrlBandcamp{Artiste: auteur, Album: album, SpotifyUrl: spo, BandcampUrl: ""}
+}
+
 type RespBandcamp struct {
     Done int `json:"done"`
     Todo int `json:"todo"`
-    Urls []UrlBandcamp  `json:"urls"`
+    Albums []UrlBandcamp  `json:"albums"`
+    Artists []UrlBandcamp `json:"artists"`
+    Notfound []UrlBandcamp `json:"notfound"`
+
 }
 
-func (rp *RespBandcamp) Add(tmp UrlBandcamp) []UrlBandcamp {
-    rp.Urls = append(rp.Urls, tmp)
-    return rp.Urls
+func (rp *RespBandcamp) AddAlbum(tmp UrlBandcamp) []UrlBandcamp {
+    rp.Albums = append(rp.Albums, tmp)
+    return rp.Albums
+}
+
+func (rp *RespBandcamp) AddArtist(tmp UrlBandcamp) []UrlBandcamp {
+    rp.Artists = append(rp.Artists, tmp)
+    return rp.Artists
+}
+
+func (rp *RespBandcamp) AddNotfound(tmp UrlBandcamp) []UrlBandcamp {
+    rp.Notfound = append(rp.Notfound, tmp)
+    return rp.Notfound
 }
 
 type SpotifyItem struct {

@@ -1,5 +1,5 @@
 h1 {
-    color: red;
+    color: green;
 }
 
 td, th {
@@ -13,4 +13,8 @@ tr:nth-child(even) {
 footer {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
+}
+
+.only-artist {
+    color: red;
 }

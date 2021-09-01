@@ -17,7 +17,7 @@ var MyResp = &RespBandcamp{}
 check artist and album 
 items[x].track.album.name et items[x].track.album.artists[0].name
 */
-func testBandcamp(album string, artist string) BandcampAlbum{
+func searchAlbumBandcamp(album string, artist string) BandcampAlbum{
     bandcampClient := bandcamp.NewClient()
 
     results, err := bandcampClient.Search(album)
@@ -28,6 +28,22 @@ func testBandcamp(album string, artist string) BandcampAlbum{
 
     if (strings.Contains(results[0].Title, album) || strings.Contains(album, results[0].Title)) && strings.Compare(results[0].Artist, artist) == 0 {
         return BandcampAlbum{true, results[0].URL}
+    } else {
+        return BandcampAlbum{false, ""}
+    }
+}
+
+func searchArtistBandcamp(artist string) BandcampAlbum {
+    bandcampClient := bandcamp.NewClient()
+
+    results, err := bandcampClient.Search(artist)
+    if err != nil {
+        log.Println(err)
+        return BandcampAlbum{false, ""}
+    }
+
+    if strings.Compare(results[0].Artist, artist) == 0 {
+        return BandcampAlbum{true, strings.Split(results[0].URL, "/album/")[0]}
     } else {
         return BandcampAlbum{false, ""}
     }
@@ -73,25 +89,41 @@ func getListPlaylist(id string) {
     MyResp.Done = 0
 
     for i := 0; i < len(playlist.Items); i++ {
-        tmp = testBandcamp(playlist.Items[i].Track.Album.Name,
-                           playlist.Items[i].Track.Album.Artists[0].Name)
+        tmp = searchAlbumBandcamp(playlist.Items[i].Track.Album.Name,
+            playlist.Items[i].Track.Album.Artists[0].Name)
         if tmp.find {
             //fmt.Printf("Find !! url: %s\n", tmp.url)
             //MyResp.url = append(MyResp.url, tmp.url)
             //MyResp.url = append (MyResp.url, tmp.url)
             //MyResp.Add(tmp.url)
-            MyResp.Add(newUrlBandcamp(
+            MyResp.AddAlbum(newUrlBandcamp(
                 playlist.Items[i].Track.Album.Artists[0].Name,
                 playlist.Items[i].Track.Album.Name,
                 playlist.Items[i].Track.Album.ExternalUrls.Spotify,
                 tmp.url))
             //fmt.Printf("tmp %s \n", MyResp.url[0])
             //fmt.Printf("len=%d cap=%d %v\n", len(MyResp.url), cap(MyResp.url), MyResp.url)
+        } else {
+            tmp = searchArtistBandcamp(playlist.Items[i].Track.Album.Artists[0].Name)
+            if tmp.find {
+                MyResp.AddArtist(newUrlBandcamp(
+                    playlist.Items[i].Track.Album.Artists[0].Name,
+                    playlist.Items[i].Track.Album.Name,
+                    playlist.Items[i].Track.Album.ExternalUrls.Spotify,
+                    tmp.url))
+            } else {
+                MyResp.AddNotfound(newUrlWoBandcamp(
+                    playlist.Items[i].Track.Album.Artists[0].Name,
+                    playlist.Items[i].Track.Album.Name,
+                    playlist.Items[i].Track.Album.ExternalUrls.Spotify))
+            }
         }
-        if i % 25 == 0 {
+
+        MyResp.Done++
+
+        if i % 10 == 0 {
             time.Sleep(5 * time.Second)
         }
-        MyResp.Done++
     }
     fmt.Printf("\nFinish\n")
 }
@@ -125,7 +157,9 @@ func getNew(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(MyResp)
-    MyResp.Urls = nil
+    MyResp.Albums = nil
+    MyResp.Artists = nil
+    MyResp.Notfound = nil
 }
 
 func main() {
