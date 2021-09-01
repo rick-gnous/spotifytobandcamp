@@ -4,7 +4,9 @@ import (
     "fmt"
     "log"
     "time"
+    "errors"
     "strings"
+    "strconv"
     "net/http"
     "encoding/json"
     "github.com/undertideco/bandcamp"
@@ -49,6 +51,50 @@ func searchArtistBandcamp(artist string) BandcampAlbum {
     }
 }
 
+func getAllTracksPlaylist(id string, offset int) (SpotifyPlaylist, error) {
+    ret := SpotifyPlaylist{}
+    req, e := http.NewRequest("GET",
+        "https://api.spotify.com/v1/playlists/"+id+"/tracks?offset="+strconv.FormatInt(int64(offset), 10),
+        nil)
+    if e != nil {
+        fmt.Printf("%+v", e)
+    }
+    req.Header.Add("Accept", "application/json")
+    req.Header.Add("Content-Type", "application/json")
+    req.Header.Add("Authorization", SpotifyAPI)
+    res, err := MyClient.Do(req)
+
+    if err != nil {
+        return ret, err
+    }
+
+    if res.StatusCode > 300 {
+        fmt.Printf("code %d\n", res.StatusCode)
+        return ret, errors.New("Erreur token ou playlist inexistante.")
+    }
+
+    playlist := &SpotifyPlaylist{}
+    defer res.Body.Close()
+    err = json.NewDecoder(res.Body).Decode(&playlist)
+    if err != nil {
+        return ret, err
+        fmt.Printf("error:", err)
+    }
+
+    ret = *playlist
+    fmt.Printf("\n%d cc %d\n", ret.Total, offset)
+    if ret.Total > offset {
+        r, e := getAllTracksPlaylist(id, offset + 100)
+        if e != nil {
+            return ret, e
+        }
+
+        ret.Items = append(ret.Items, r.Items...)
+    }
+
+    return ret, nil
+}
+
 /*
 id de la playlist
 */
@@ -58,6 +104,7 @@ func getListPlaylist(id string) {
                               "https://api.spotify.com/v1/playlists/"+id+"/tracks",
                               nil)
                               */
+                              /*
     req, _ := http.NewRequest("GET",
                               "http://localhost:8001",
                               nil)
@@ -83,7 +130,14 @@ func getListPlaylist(id string) {
         fmt.Printf("error:", err)
         return
     }
+    */
 
+    playlist, err := getAllTracksPlaylist(id, 0)
+    if err != nil {
+        fmt.Printf("Erreru!!\n")
+        fmt.Printf("%+v", err)
+        return
+    }
     tmp := BandcampAlbum{}
     MyResp.Todo = len(playlist.Items)
     MyResp.Done = 0
