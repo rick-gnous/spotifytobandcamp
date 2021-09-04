@@ -110,39 +110,6 @@ func getAllTracksPlaylist(id string, offset int) (SpotifyPlaylist, error) {
 id de la playlist
 */
 func getListPlaylist(id string) {
-    /*
-    req, _ := http.NewRequest("GET",
-                              "https://api.spotify.com/v1/playlists/"+id+"/tracks",
-                              nil)
-                              */
-                              /*
-    req, _ := http.NewRequest("GET",
-                              "http://localhost:8001",
-                              nil)
-    req.Header.Add("Accept", "application/json")
-    req.Header.Add("Content-Type", "application/json")
-    req.Header.Add("Authorization", SpotifyAPI)
-
-    res, err := MyClient.Do(req)
-    if err != nil {
-        fmt.Printf("error:", err)
-        return
-    }
-
-    if res.StatusCode > 300 {
-        fmt.Printf("Erreur !!\n")
-        return
-    }
-
-    playlist := &SpotifyPlaylist{}
-    defer res.Body.Close()
-    err = json.NewDecoder(res.Body).Decode(&playlist)
-    if err != nil {
-        fmt.Printf("error:", err)
-        return
-    }
-    */
-
     playlist, err := getAllTracksPlaylist(id, 0)
     if err != nil {
         fmt.Printf("Erreru!!\n")
@@ -157,17 +124,11 @@ func getListPlaylist(id string) {
         tmp = searchAlbumBandcamp(playlist.Items[i].Track.Album.Name,
             playlist.Items[i].Track.Album.Artists[0].Name)
         if tmp.find {
-            //fmt.Printf("Find !! url: %s\n", tmp.url)
-            //MyResp.url = append(MyResp.url, tmp.url)
-            //MyResp.url = append (MyResp.url, tmp.url)
-            //MyResp.Add(tmp.url)
             MyResp.AddAlbum(newUrlBandcamp(
                 playlist.Items[i].Track.Album.Artists[0].Name,
                 playlist.Items[i].Track.Album.Name,
                 playlist.Items[i].Track.Album.ExternalUrls.Spotify,
                 tmp.url))
-            //fmt.Printf("tmp %s \n", MyResp.url[0])
-            //fmt.Printf("len=%d cap=%d %v\n", len(MyResp.url), cap(MyResp.url), MyResp.url)
         } else {
             tmp = searchArtistBandcamp(playlist.Items[i].Track.Album.Artists[0].Name)
             if tmp.find {

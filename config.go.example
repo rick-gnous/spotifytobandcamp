@@ -1,5 +1,4 @@
 package main
 
-var SpotifyAPI = ""
 var ClientID = ""
 var RedirectURI = ""
