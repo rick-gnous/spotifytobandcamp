@@ -30,35 +30,35 @@ func loginSpotify(w http.ResponseWriter, r *http.Request) {
 check artist and album 
 items[x].track.album.name et items[x].track.album.artists[0].name
 */
-func searchAlbumBandcamp(album string, artist string) BandcampAlbum{
+func searchAlbumBandcamp(album string, artist string) (bool, string) {
     bandcampClient := bandcamp.NewClient()
 
     results, err := bandcampClient.Search(album)
     if err != nil {
         log.Println(err)
-        return BandcampAlbum{false, ""}
+        return false, ""
     }
 
     if (strings.Contains(results[0].Title, album) || strings.Contains(album, results[0].Title)) && strings.Compare(results[0].Artist, artist) == 0 {
-        return BandcampAlbum{true, results[0].URL}
+        return true, results[0].URL
     } else {
-        return BandcampAlbum{false, ""}
+        return false, ""
     }
 }
 
-func searchArtistBandcamp(artist string) BandcampAlbum {
+func searchArtistBandcamp(artist string) (bool, string) {
     bandcampClient := bandcamp.NewClient()
 
     results, err := bandcampClient.Search(artist)
     if err != nil {
         log.Println(err)
-        return BandcampAlbum{false, ""}
+        return false, ""
     }
 
     if strings.Compare(results[0].Artist, artist) == 0 {
-        return BandcampAlbum{true, strings.Split(results[0].URL, "/album/")[0]}
+        return true, strings.Split(results[0].URL, "/album/")[0]
     } else {
-        return BandcampAlbum{false, ""}
+        return false, ""
     }
 }
 
@@ -116,27 +116,28 @@ func getListPlaylist(id string) {
         fmt.Printf("%+v", err)
         return
     }
-    tmp := BandcampAlbum{}
+    var find bool
+    var tmp string
     MyResp.Todo = len(playlist.Items)
     MyResp.Done = 0
 
     for i := 0; i < len(playlist.Items); i++ {
-        tmp = searchAlbumBandcamp(playlist.Items[i].Track.Album.Name,
+        find, tmp = searchAlbumBandcamp(playlist.Items[i].Track.Album.Name,
             playlist.Items[i].Track.Album.Artists[0].Name)
-        if tmp.find {
+        if find {
             MyResp.AddAlbum(newUrlBandcamp(
                 playlist.Items[i].Track.Album.Artists[0].Name,
                 playlist.Items[i].Track.Album.Name,
                 playlist.Items[i].Track.Album.ExternalUrls.Spotify,
-                tmp.url))
+                tmp))
         } else {
-            tmp = searchArtistBandcamp(playlist.Items[i].Track.Album.Artists[0].Name)
-            if tmp.find {
+            find, tmp = searchArtistBandcamp(playlist.Items[i].Track.Album.Artists[0].Name)
+            if find {
                 MyResp.AddArtist(newUrlBandcamp(
                     playlist.Items[i].Track.Album.Artists[0].Name,
                     playlist.Items[i].Track.Album.Name,
                     playlist.Items[i].Track.Album.ExternalUrls.Spotify,
-                    tmp.url))
+                    tmp))
             } else {
                 MyResp.AddNotfound(newUrlWoBandcamp(
                     playlist.Items[i].Track.Album.Artists[0].Name,

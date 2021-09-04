@@ -8,11 +8,6 @@ type TokenUser struct {
     ExpiresIn string `json:"expires_in"`
 }
 
-type BandcampAlbum struct {
-    find bool
-    url string
-}
-
 type UrlBandcamp struct {
     Artiste string `json:"artist"`
     Album string `json:"album"`
