@@ -23,7 +23,6 @@ func loginSpotify(w http.ResponseWriter, r *http.Request) {
 
     w.Header().Set("Location", "https://accounts.spotify.com/authorize?client_id="+ClientID+"&response_type=token&redirect_uri="+RedirectURI)
     w.WriteHeader(http.StatusSeeOther)
-    go getListPlaylist(r.FormValue("id"))
 }
 
 /* 
