@@ -2,6 +2,12 @@ package main
 
 import "time"
 
+type TokenUser struct {
+    Token string `json:"access_token"`
+    TokenType string `json:"token_type"`
+    ExpiresIn string `json:"expires_in"`
+}
+
 type BandcampAlbum struct {
     find bool
     url string

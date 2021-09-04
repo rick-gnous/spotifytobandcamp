@@ -14,6 +14,7 @@ import (
 
 var MyClient = &http.Client{}
 var MyResp = &RespBandcamp{}
+var SpotifyAPI = &TokenUser{}
 
 func loginSpotify(w http.ResponseWriter, r *http.Request) {
     if err := r.ParseForm(); err != nil {
@@ -71,7 +72,7 @@ func getAllTracksPlaylist(id string, offset int) (SpotifyPlaylist, error) {
     }
     req.Header.Add("Accept", "application/json")
     req.Header.Add("Content-Type", "application/json")
-    req.Header.Add("Authorization", SpotifyAPI)
+    req.Header.Add("Authorization", SpotifyAPI.TokenType + " " + SpotifyAPI.Token)
     res, err := MyClient.Do(req)
 
     if err != nil {
@@ -226,8 +227,12 @@ func getNew(w http.ResponseWriter, r *http.Request) {
     MyResp.Notfound = nil
 }
 
-func mytest(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, r.RequestURI)
+func mytoken(w http.ResponseWriter, r *http.Request) {
+    defer r.Body.Close()
+    err := json.NewDecoder(r.Body).Decode(&SpotifyAPI)
+    if err != nil {
+        fmt.Printf("error:", err)
+    }
 }
 
 func main() {
@@ -237,7 +242,7 @@ func main() {
     http.HandleFunc("/back", formHandler)
     http.HandleFunc("/refresh", getNew)
     http.HandleFunc("/spotify", loginSpotify)
-    http.HandleFunc("/mytest", mytest)
+    http.HandleFunc("/mytoken", mytoken)
 
     fmt.Printf("Starting the server…\n")
     if err := http.ListenAndServe(":8080", nil); err != nil {
