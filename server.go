@@ -15,6 +15,17 @@ import (
 var MyClient = &http.Client{}
 var MyResp = &RespBandcamp{}
 
+func loginSpotify(w http.ResponseWriter, r *http.Request) {
+    if err := r.ParseForm(); err != nil {
+        fmt.Fprintf(w, "ParseForm() err: %v", err)
+        return
+    }
+
+    w.Header().Set("Location", "https://accounts.spotify.com/authorize?client_id="+ClientID+"&response_type=token&redirect_uri="+RedirectURI)
+    w.WriteHeader(http.StatusSeeOther)
+    go getListPlaylist(r.FormValue("id"))
+}
+
 /* 
 check artist and album 
 items[x].track.album.name et items[x].track.album.artists[0].name
@@ -216,12 +227,18 @@ func getNew(w http.ResponseWriter, r *http.Request) {
     MyResp.Notfound = nil
 }
 
+func mytest(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, r.RequestURI)
+}
+
 func main() {
     fileServer := http.FileServer(http.Dir("./static"))
     http.Handle("/", fileServer)
     http.HandleFunc("/hello", hello)
     http.HandleFunc("/back", formHandler)
     http.HandleFunc("/refresh", getNew)
+    http.HandleFunc("/spotify", loginSpotify)
+    http.HandleFunc("/mytest", mytest)
 
     fmt.Printf("Starting the server…\n")
     if err := http.ListenAndServe(":8080", nil); err != nil {
