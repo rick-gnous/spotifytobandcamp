@@ -93,7 +93,6 @@ func getAllTracksPlaylist(id string, offset int) (SpotifyPlaylist, error) {
     }
 
     ret = *playlist
-    fmt.Printf("\n%d cc %d\n", ret.Total, offset)
     if ret.Total > offset {
         r, e := getAllTracksPlaylist(id, offset + 100)
         if e != nil {
