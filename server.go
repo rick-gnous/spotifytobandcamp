@@ -9,6 +9,7 @@ import (
     "strconv"
     "net/http"
     "encoding/json"
+    "github.com/gofiber/fiber/v2"
     "github.com/undertideco/bandcamp"
 )
 
@@ -16,14 +17,9 @@ var MyClient = &http.Client{}
 var MyResp = &RespBandcamp{}
 var SpotifyAPI = &TokenUser{}
 
-func loginSpotify(w http.ResponseWriter, r *http.Request) {
-    if err := r.ParseForm(); err != nil {
-        fmt.Fprintf(w, "ParseForm() err: %v", err)
-        return
-    }
-
-    w.Header().Set("Location", "https://accounts.spotify.com/authorize?client_id="+ClientID+"&response_type=token&redirect_uri="+RedirectURI)
-    w.WriteHeader(http.StatusSeeOther)
+func loginSpotify(c *fiber.Ctx) error {
+    c.Set("Location", "https://accounts.spotify.com/authorize?client_id="+ClientID+"&response_type=token&redirect_uri="+RedirectURI)
+    return c.SendStatus(303)
 }
 
 /* 
@@ -154,59 +150,39 @@ func getListPlaylist(id string) {
     fmt.Printf("\nFinish\n")
 }
 
-func formHandler(w http.ResponseWriter, r *http.Request) {
-    if err := r.ParseForm(); err != nil {
-        fmt.Fprintf(w, "ParseForm() err: %v", err)
-        return
-    }
-
-    w.Header().Set("Location", "/feudecamp.html")
-    w.WriteHeader(http.StatusSeeOther)
-    go getListPlaylist(r.FormValue("id"))
+func formHandler (c *fiber.Ctx) error {
+    c.Set("Location", "/feudecamp.html")
+    go getListPlaylist(c.FormValue("id"))
+    return c.SendStatus(303)
 }
 
-func hello(w http.ResponseWriter, r *http.Request) {
-    if r.URL.Path != "/hello" {
-        http.Error(w, "404", http.StatusNotFound)
-        return
-    }
-
-    if r.Method != "GET" {
-        http.Error(w, "Use GET pls", http.StatusNotFound)
-        return
-    }
-
-    fmt.Fprintf(w, "Helo!")
+func hello(c *fiber.Ctx) error {
+    return c.SendString("Helo!")
 }
 
-func getNew(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(MyResp)
+func getNew(c *fiber.Ctx) error {
+    c.JSON(MyResp)
     MyResp.Albums = nil
     MyResp.Artists = nil
     MyResp.Notfound = nil
+    return c.SendStatus(201)
 }
 
-func mytoken(w http.ResponseWriter, r *http.Request) {
-    defer r.Body.Close()
-    err := json.NewDecoder(r.Body).Decode(&SpotifyAPI)
-    if err != nil {
-        fmt.Printf("error:", err)
-    }
+func mytoken(c *fiber.Ctx) error {
+    return c.BodyParser(&SpotifyAPI)
 }
 
 func main() {
-    fileServer := http.FileServer(http.Dir("./static"))
-    http.Handle("/", fileServer)
-    http.HandleFunc("/hello", hello)
-    http.HandleFunc("/back", formHandler)
-    http.HandleFunc("/refresh", getNew)
-    http.HandleFunc("/spotify", loginSpotify)
-    http.HandleFunc("/mytoken", mytoken)
+    app := fiber.New()
 
+    app.Static("/", "./static")
+
+    app.Get("/hello", hello)
+    app.Get("/refresh", getNew)
+    app.Get("/spotify", loginSpotify)
+
+    app.Post("/back", formHandler)
+    app.Post("/mytoken", mytoken)
     fmt.Printf("Starting the server…\n")
-    if err := http.ListenAndServe(":8080", nil); err != nil {
-        log.Fatal(err)
-    }
+    app.Listen(":8080")
 }
