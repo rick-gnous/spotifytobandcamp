@@ -11,11 +11,15 @@ import (
     "encoding/json"
     "github.com/gofiber/fiber/v2"
     "github.com/undertideco/bandcamp"
+    "github.com/gofiber/template/html"
+    "github.com/gofiber/fiber/v2/middleware/session"
 )
 
 var MyClient = &http.Client{}
 var MyResp = &RespBandcamp{}
-var SpotifyAPI = &TokenUser{}
+var SpotifyAPI = newTokenUser()
+//var SpotifyAPI = &TokenUser{}
+var Session = session.New()
 
 func loginSpotify(c *fiber.Ctx) error {
     c.Set("Location", "https://accounts.spotify.com/authorize?client_id="+ClientID+"&response_type=token&redirect_uri="+RedirectURI)
@@ -172,17 +176,21 @@ func mytoken(c *fiber.Ctx) error {
     return c.BodyParser(&SpotifyAPI)
 }
 
-func main() {
-    app := fiber.New()
+func index(c *fiber.Ctx) error {
+    return c.Render("index", fiber.Map{"connected": !SpotifyAPI.CheckEmpty(),})
+}
 
+func main() {
+    //app := fiber.New(fiber.Config(Views: html, ViewsLayout: "layouts/mainbbb"))
+    app := fiber.New(fiber.Config{Views: html.New("./views", ".html"),})
     app.Static("/", "./static")
 
+    app.Get("/", index)
     app.Get("/hello", hello)
     app.Get("/refresh", getNew)
     app.Get("/spotify", loginSpotify)
-
     app.Post("/back", formHandler)
     app.Post("/mytoken", mytoken)
-    fmt.Printf("Starting the server…\n")
+
     app.Listen(":8080")
 }

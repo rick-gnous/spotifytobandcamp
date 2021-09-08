@@ -12,7 +12,8 @@ require (
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocolly/colly v1.2.0 // indirect
 	github.com/gofiber/fiber/v2 v2.18.0 // indirect
-	github.com/golang/protobuf v1.3.1 // indirect
+	github.com/gofiber/template v1.6.16 // indirect
+	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/klauspost/compress v1.13.4 // indirect
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
