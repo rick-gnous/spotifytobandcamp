@@ -173,7 +173,16 @@ func getNew(c *fiber.Ctx) error {
 }
 
 func mytoken(c *fiber.Ctx) error {
+    //if c.Query("error")
     return c.BodyParser(&SpotifyAPI)
+}
+
+func spotifyCallback(c *fiber.Ctx) error {
+    if c.Query("error") != "" {
+        return c.Render("index", fiber.Map{"error": "Erreur lors de la connexion.",})
+    } else {
+        return c.Render("spotify-token", fiber.Map{})
+    }
 }
 
 func index(c *fiber.Ctx) error {
@@ -181,7 +190,7 @@ func index(c *fiber.Ctx) error {
 }
 
 func main() {
-    //app := fiber.New(fiber.Config(Views: html, ViewsLayout: "layouts/mainbbb"))
+    //app := fiber.New(fiber.Config(Views: html, ViewsLayout: "layouts/main"))
     app := fiber.New(fiber.Config{Views: html.New("./views", ".html"),})
     app.Static("/", "./static")
 
@@ -189,6 +198,7 @@ func main() {
     app.Get("/hello", hello)
     app.Get("/refresh", getNew)
     app.Get("/spotify", loginSpotify)
+    app.Get("/callback", spotifyCallback)
     app.Post("/back", formHandler)
     app.Post("/mytoken", mytoken)
 
