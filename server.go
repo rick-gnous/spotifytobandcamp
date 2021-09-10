@@ -20,11 +20,7 @@ var MyResp = &RespBandcamp{}
 var SpotifyAPI = newTokenUser()
 //var SpotifyAPI = &TokenUser{}
 var Session = session.New()
-
-func loginSpotify(c *fiber.Ctx) error {
-    c.Set("Location", "https://accounts.spotify.com/authorize?client_id="+ClientID+"&response_type=token&redirect_uri="+RedirectURI)
-    return c.SendStatus(303)
-}
+var Errors string
 
 /* 
 check artist and album 
@@ -160,10 +156,6 @@ func formHandler (c *fiber.Ctx) error {
     return c.SendStatus(303)
 }
 
-func hello(c *fiber.Ctx) error {
-    return c.SendString("Helo!")
-}
-
 func getNew(c *fiber.Ctx) error {
     c.JSON(MyResp)
     MyResp.Albums = nil
@@ -173,8 +165,11 @@ func getNew(c *fiber.Ctx) error {
 }
 
 func mytoken(c *fiber.Ctx) error {
-    //if c.Query("error")
-    return c.BodyParser(&SpotifyAPI)
+    err :=  c.BodyParser(&SpotifyAPI)
+    if err != nil {
+        Errors = err.Error()
+    }
+    return c.SendStatus(201)
 }
 
 func spotifyCallback(c *fiber.Ctx) error {
@@ -186,7 +181,16 @@ func spotifyCallback(c *fiber.Ctx) error {
 }
 
 func index(c *fiber.Ctx) error {
-    return c.Render("index", fiber.Map{"connected": !SpotifyAPI.CheckEmpty(),})
+    if Errors == "" {
+        return c.Render("index", fiber.Map{"connected": !SpotifyAPI.CheckEmpty(),
+        "url": SpotifyURL})
+    } else {
+        tmp := Errors
+        Errors = ""
+        return c.Render("index", fiber.Map{"connected": !SpotifyAPI.CheckEmpty(),
+        "error": tmp,
+        "url": SpotifyURL})
+    }
 }
 
 func main() {
@@ -195,12 +199,11 @@ func main() {
     app.Static("/", "./static")
 
     app.Get("/", index)
-    app.Get("/hello", hello)
-    app.Get("/refresh", getNew)
-    app.Get("/spotify", loginSpotify)
-    app.Get("/callback", spotifyCallback)
+    app.Post("/", mytoken)
+    app.Post("/feudecamp", getNew)
     app.Post("/back", formHandler)
-    app.Post("/mytoken", mytoken)
+    app.Get("/callback", spotifyCallback)
+    //app.Post("/mytoken", mytoken)
 
     app.Listen(":8080")
 }

@@ -29,7 +29,7 @@ async function addCell(id, elem) {
 }
 
 async function refreshArray() {
-  const data = await fetch('/refresh').then(response => response.json());
+  const data = await fetch('/feudecamp', {method: 'POST'}).then(response => response.json());
   if (data != null) {
     document.getElementById("nb-fait").textContent = data.done;
     document.getElementById("nb-total").textContent = data.todo;

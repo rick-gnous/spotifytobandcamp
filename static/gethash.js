@@ -5,7 +5,7 @@ for (let elem of hash) {
   datas[elem[0]] = elem[1];
 }
 
-fetch('/mytoken', {
+fetch('/', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
