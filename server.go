@@ -165,10 +165,28 @@ func getNew(c *fiber.Ctx) error {
 }
 
 func mytoken(c *fiber.Ctx) error {
-    err :=  c.BodyParser(&SpotifyAPI)
+    err := c.BodyParser(&SpotifyAPI)
     if err != nil {
         Errors = err.Error()
+    } else {
+        sess, err := Session.Get(c)
+        if err != nil {
+            Errors = err.Error()
+        }
+        sess.Set("token", SpotifyAPI.Token)
+        sess.Set("expire", SpotifyAPI.ExpiresIn)
+        sess.Set("tokentype", SpotifyAPI.TokenType)
+        sess.Set("creation", time.Now().GoString())
+        err = sess.Save()
+
+        if err != nil {
+            fmt.Printf("%v+", err)
+        }
     }
+
+    //sess.Set("creation", time.Now())
+
+
     return c.SendStatus(201)
 }
 
@@ -181,14 +199,30 @@ func spotifyCallback(c *fiber.Ctx) error {
 }
 
 func index(c *fiber.Ctx) error {
+    sess, err := Session.Get(c)
+    if err != nil {
+        Errors = err.Error()
+    }
+
     if Errors == "" {
-        return c.Render("index", fiber.Map{"connected": !SpotifyAPI.CheckEmpty(),
+        tmp := false
+        if sess.Get("token") != nil {
+            tmp = true
+        }
+
+        //return c.Render("index", fiber.Map{"connected": !SpotifyAPI.CheckEmpty(),
+        return c.Render("index", fiber.Map{"connected": tmp,
         "url": SpotifyURL})
     } else {
-        tmp := Errors
+        tmp := false
+        if sess.Get("token") != nil {
+            tmp = true
+        }
+
+        e := Errors
         Errors = ""
-        return c.Render("index", fiber.Map{"connected": !SpotifyAPI.CheckEmpty(),
-        "error": tmp,
+        return c.Render("index", fiber.Map{"connected": tmp,
+        "error": e,
         "url": SpotifyURL})
     }
 }
@@ -203,7 +237,6 @@ func main() {
     app.Post("/feudecamp", getNew)
     app.Post("/back", formHandler)
     app.Get("/callback", spotifyCallback)
-    //app.Post("/mytoken", mytoken)
 
     app.Listen(":8080")
 }
