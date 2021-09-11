@@ -20,6 +20,15 @@ var MyClient = &http.Client{}
 var Session = session.New()
 var Queue = make(map[string]*RespBandcamp)
 
+func checkToken(sess *session.Session) {
+    expire := sess.Get("expire")
+    if expire != nil {
+        if time.Now().Unix() > sess.Get("creation").(int64) + expire.(int64) {
+            sess.Destroy()
+        }
+    }
+}
+
 /* 
 check artist and album 
 items[x].track.album.name et items[x].track.album.artists[0].name
@@ -159,6 +168,8 @@ func getListPlaylist(id, token, tokentype string) {
 func formHandler (c *fiber.Ctx) error {
     sess, _ := Session.Get(c)
 
+    checkToken(sess)
+
     if sess.Get("token") == nil {
         panic("Vous n’êtes pas connecté à Spotify.")
     }
@@ -195,10 +206,12 @@ func mytoken(c *fiber.Ctx) error {
             log.Panic(err.Error())
         }
 
+        expire, _ := strconv.Atoi(tmp.ExpiresIn)
+
         sess.Set("token", tmp.Token)
-        sess.Set("expire", tmp.ExpiresIn)
+        sess.Set("expire", int64(expire))
         sess.Set("tokentype", tmp.TokenType)
-        sess.Set("creation", time.Now().GoString())
+        sess.Set("creation", time.Now().Unix())
         err = sess.Save()
 
         if err != nil {
@@ -220,6 +233,8 @@ func spotifyCallback(c *fiber.Ctx) error {
 func index(c *fiber.Ctx) error {
     sess, _ := Session.Get(c)
 
+    checkToken(sess)
+
     return c.Render("index", fiber.Map{"connected": sess.Get("token") != nil,
         "url": SpotifyURL})
 }
@@ -229,6 +244,8 @@ func fdc(c *fiber.Ctx) error {
 
     if sess.Get("token") == nil {
         panic("Vous n’êtes pas connecté.")
+    } else if _, err := Queue[sess.Get("token").(string)]; !err {
+        panic("Vous n’avez pas lancé de playlist.")
     }
     return c.Render("feudecamp", fiber.Map{})
 }
