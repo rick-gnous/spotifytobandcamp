@@ -2,3 +2,4 @@ package main
 
 var ClientID = ""
 var RedirectURI = ""
+var SpotifyURL = "https://accounts.spotify.com/authorize?client_id="+ClientID+"&response_type=token&redirect_uri="+RedirectURI
