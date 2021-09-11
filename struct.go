@@ -12,13 +12,6 @@ func newTokenUser() TokenUser {
     return TokenUser{Token: "", TokenType: "", ExpiresIn: ""}
 }
 
-func (tu *TokenUser) CheckEmpty() bool {
-    if tu.Token == "" {
-        return true
-    }
-    return false
-}
-
 type UrlBandcamp struct {
     Artiste string `json:"artist"`
     Album string `json:"album"`
