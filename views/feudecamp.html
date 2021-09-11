@@ -9,6 +9,9 @@
         <p>Recherche dans une playlist les artistes se trouvant aussi sur Bandcamp !</p>
         <hr />
 
+        {{ if .error }}
+
+        {{ else }}
         <div id="inf-loader">
             <div id="loader"></div>
             <p>La playlist est en cours de traitement [<span id="nb-fait">0</span>/<span id="nb-total">0</span>]…</p>
@@ -45,11 +48,15 @@
                 </tr>
             </table>
         </div>
+        {{ end }}
+
         <hr />
         <footer>
             <img src="https://www.gnu.org/graphics/gplv3-or-later-sm.png" alt="logo GPL3" *>
             <p>Ce site est en aucun cas affilié avec Bandcamp ou Spotify.</p>
         </footer>
     </body>
+    {{ if not .error }}
     <script src="/script.js"></script>
+    {{ end }}
 <html>
