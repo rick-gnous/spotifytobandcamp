@@ -180,6 +180,7 @@ func formHandler (c *fiber.Ctx) error {
         panic(e.Error())
     }
 
+    Queue[token] = nil
     c.Set("Location", "/feudecamp")
     go getListPlaylist(id, token, tokentype)
     return c.SendStatus(303)
