@@ -28,6 +28,13 @@ async function addCell(id, elem) {
   }
 }
 
+async function cleanArray(id) {
+  var table = document.getElementById(id);
+  for (var i = table.rows.length - 1; i > 0; i--) {
+    table.deleteRow(i);
+  }
+}
+
 async function refreshArray() {
   const data = await fetch('/feudecamp', {method: 'POST'}).then(response => response.json());
   if (data != null) {
@@ -35,18 +42,21 @@ async function refreshArray() {
     document.getElementById("nb-total").textContent = data.todo;
 
     if (data.albums != null) {
+      cleanArray("found");
       for (const elem of data.albums) {
         addCell("found", elem);
       }
     }
 
     if (data.artists != null) {
+      cleanArray("artist-found");
       for (const elem of data.artists) {
         addCell("artist-found", elem);
       }
     }
 
     if (data.notfound != null) {
+      cleanArray("notfound");
       for (const elem of data.notfound) {
         addCell("notfound", elem);
       }

@@ -17,11 +17,8 @@ import (
 )
 
 var MyClient = &http.Client{}
-var MyResp = &RespBandcamp{}
-var SpotifyAPI = newTokenUser()
-//var SpotifyAPI = &TokenUser{}
 var Session = session.New()
-var Errors string
+var Queue = make(map[string]*RespBandcamp)
 
 /* 
 check artist and album 
@@ -84,7 +81,7 @@ func testSpotifyPlaylist(token, tokentype, id string) error {
     return nil
 }
 
-func getAllTracksPlaylist(token, tokentype, id string, offset int) (SpotifyPlaylist, error) {
+func getAllTracksPlaylist(token, tokentype, id string, offset int) SpotifyPlaylist {
     ret := SpotifyPlaylist{}
     req, _ := http.NewRequest("GET",
         "https://api.spotify.com/v1/playlists/"+id+"/tracks?offset="+strconv.FormatInt(int64(offset), 10),
@@ -99,38 +96,31 @@ func getAllTracksPlaylist(token, tokentype, id string, offset int) (SpotifyPlayl
     defer res.Body.Close()
     err := json.NewDecoder(res.Body).Decode(&playlist)
     if err != nil {
-        return ret, err
-        fmt.Printf("error:", err)
+        log.Print(err.Error())
+        return ret
     }
 
     ret = *playlist
     if ret.Total > offset {
-        r, e := getAllTracksPlaylist(token, tokentype, id, offset + 100)
-        if e != nil {
-            return ret, e
-        }
-
+        r := getAllTracksPlaylist(token, tokentype, id, offset + 100)
         ret.Items = append(ret.Items, r.Items...)
     }
 
-    return ret, nil
+    return ret
 }
 
 /*
 id de la playlist
 */
 func getListPlaylist(id, token, tokentype string) {
-
-    playlist, err := getAllTracksPlaylist(token, tokentype, id, 0)
-    if err != nil {
-        //fmt.Printf("error:", err.Error())
-        log.Panic("error")
-    }
+    playlist := getAllTracksPlaylist(token, tokentype, id, 0)
 
     var find bool
     var tmp string
+    var MyResp = &RespBandcamp{}
     MyResp.Todo = len(playlist.Items)
     MyResp.Done = 0
+    Queue[token] = MyResp
 
     for i := 0; i < len(playlist.Items); i++ {
         find, tmp = searchAlbumBandcamp(playlist.Items[i].Track.Album.Name,
@@ -182,23 +172,22 @@ func formHandler (c *fiber.Ctx) error {
         log.Panic(e.Error())
     }
 
-
-    c.Set("Location", "/feudecamp.html")
+    c.Set("Location", "/feudecamp")
     go getListPlaylist(id, token, tokentype)
     return c.SendStatus(303)
 }
 
 func getNew(c *fiber.Ctx) error {
     /* read session */
-    c.JSON(MyResp)
-    MyResp.Albums = nil
-    MyResp.Artists = nil
-    MyResp.Notfound = nil
+    sess, _ := Session.Get(c)
+
+    c.JSON(Queue[sess.Get("token").(string)])
     return c.SendStatus(201)
 }
 
 func mytoken(c *fiber.Ctx) error {
-    err := c.BodyParser(&SpotifyAPI)
+    tmp := newTokenUser()
+    err := c.BodyParser(&tmp)
     if err != nil {
         log.Panic(err.Error())
     } else {
@@ -207,9 +196,9 @@ func mytoken(c *fiber.Ctx) error {
             log.Panic(err.Error())
         }
 
-        sess.Set("token", SpotifyAPI.Token)
-        sess.Set("expire", SpotifyAPI.ExpiresIn)
-        sess.Set("tokentype", SpotifyAPI.TokenType)
+        sess.Set("token", tmp.Token)
+        sess.Set("expire", tmp.ExpiresIn)
+        sess.Set("tokentype", tmp.TokenType)
         sess.Set("creation", time.Now().GoString())
         err = sess.Save()
 
@@ -217,9 +206,6 @@ func mytoken(c *fiber.Ctx) error {
             log.Panic(err.Error())
         }
     }
-
-    //sess.Set("creation", time.Now())
-
 
     return c.SendStatus(201)
 }
@@ -240,17 +226,16 @@ func index(c *fiber.Ctx) error {
         tmp = true
     }
 
-    if Errors == "" {
-        //return c.Render("index", fiber.Map{"connected": !SpotifyAPI.CheckEmpty(),
-        return c.Render("index", fiber.Map{"connected": tmp,
-        "url": SpotifyURL})
-    } else {
-        e := Errors
-        Errors = ""
-        return c.Render("index", fiber.Map{"connected": tmp,
-        "error": e,
-        "url": SpotifyURL})
+    return c.Render("index", fiber.Map{"connected": tmp, "url": SpotifyURL})
+}
+
+func fdc(c *fiber.Ctx) error {
+    sess, _ := Session.Get(c)
+
+    if sess.Get("token") == nil {
+        panic("Vous n’êtes pas connecté.")
     }
+    return c.Render("feudecamp", fiber.Map{})
 }
 
 func main() {
@@ -261,6 +246,7 @@ func main() {
 
     app.Get("/", index)
     app.Post("/", mytoken)
+    app.Get("/feudecamp", fdc)
     app.Post("/feudecamp", getNew)
     app.Post("/back", formHandler)
     app.Get("/callback", spotifyCallback)
