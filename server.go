@@ -160,7 +160,7 @@ func formHandler (c *fiber.Ctx) error {
     sess, _ := Session.Get(c)
 
     if sess.Get("token") == nil {
-        log.Panic("Vous n’êtes pas connecté à Spotify.")
+        panic("Vous n’êtes pas connecté à Spotify.")
     }
 
     token := sess.Get("token").(string)
@@ -169,7 +169,7 @@ func formHandler (c *fiber.Ctx) error {
 
     e := testSpotifyPlaylist(token, tokentype, id)
     if e != nil {
-        log.Panic(e.Error())
+        panic(e.Error())
     }
 
     c.Set("Location", "/feudecamp")
@@ -178,7 +178,6 @@ func formHandler (c *fiber.Ctx) error {
 }
 
 func getNew(c *fiber.Ctx) error {
-    /* read session */
     sess, _ := Session.Get(c)
 
     c.JSON(Queue[sess.Get("token").(string)])
@@ -221,12 +220,8 @@ func spotifyCallback(c *fiber.Ctx) error {
 func index(c *fiber.Ctx) error {
     sess, _ := Session.Get(c)
 
-    tmp := false
-    if sess.Get("token") != nil {
-        tmp = true
-    }
-
-    return c.Render("index", fiber.Map{"connected": tmp, "url": SpotifyURL})
+    return c.Render("index", fiber.Map{"connected": sess.Get("token") != nil,
+        "url": SpotifyURL})
 }
 
 func fdc(c *fiber.Ctx) error {
