@@ -12,6 +12,7 @@ import (
     "github.com/gofiber/fiber/v2"
     "github.com/undertideco/bandcamp"
     "github.com/gofiber/template/html"
+    "github.com/gofiber/fiber/v2/middleware/recover"
     "github.com/gofiber/fiber/v2/middleware/session"
 )
 
@@ -58,31 +59,45 @@ func searchArtistBandcamp(artist string) (bool, string) {
     }
 }
 
-func getAllTracksPlaylist(id string, offset int) (SpotifyPlaylist, error) {
-    ret := SpotifyPlaylist{}
+func testSpotifyPlaylist(token, tokentype, id string) error {
     req, e := http.NewRequest("GET",
-        "https://api.spotify.com/v1/playlists/"+id+"/tracks?offset="+strconv.FormatInt(int64(offset), 10),
-        nil)
+        "https://api.spotify.com/v1/playlists/"+id+"/tracks", nil)
     if e != nil {
-        fmt.Printf("%+v", e)
+        return e
     }
     req.Header.Add("Accept", "application/json")
     req.Header.Add("Content-Type", "application/json")
-    req.Header.Add("Authorization", SpotifyAPI.TokenType + " " + SpotifyAPI.Token)
+    req.Header.Add("Authorization", tokentype + " " + token)
     res, err := MyClient.Do(req)
 
     if err != nil {
-        return ret, err
+        return err
     }
 
-    if res.StatusCode > 300 {
-        fmt.Printf("code %d\n", res.StatusCode)
-        return ret, errors.New("Erreur token ou playlist inexistante.")
+    switch res.StatusCode {
+        case 400: return errors.New("La requete s’est mal exécutée.")
+        case 401: return errors.New("La Playlist semble être privée.")
+        case 403: return errors.New("Accès refusé (token peut-être périmé).")
+        case 404: return errors.New("Playlist inexistante.")
     }
+
+    return nil
+}
+
+func getAllTracksPlaylist(token, tokentype, id string, offset int) (SpotifyPlaylist, error) {
+    ret := SpotifyPlaylist{}
+    req, _ := http.NewRequest("GET",
+        "https://api.spotify.com/v1/playlists/"+id+"/tracks?offset="+strconv.FormatInt(int64(offset), 10),
+        nil)
+
+    req.Header.Add("Accept", "application/json")
+    req.Header.Add("Content-Type", "application/json")
+    req.Header.Add("Authorization", tokentype + " " + token)
+    res, _ := MyClient.Do(req)
 
     playlist := &SpotifyPlaylist{}
     defer res.Body.Close()
-    err = json.NewDecoder(res.Body).Decode(&playlist)
+    err := json.NewDecoder(res.Body).Decode(&playlist)
     if err != nil {
         return ret, err
         fmt.Printf("error:", err)
@@ -90,7 +105,7 @@ func getAllTracksPlaylist(id string, offset int) (SpotifyPlaylist, error) {
 
     ret = *playlist
     if ret.Total > offset {
-        r, e := getAllTracksPlaylist(id, offset + 100)
+        r, e := getAllTracksPlaylist(token, tokentype, id, offset + 100)
         if e != nil {
             return ret, e
         }
@@ -104,13 +119,14 @@ func getAllTracksPlaylist(id string, offset int) (SpotifyPlaylist, error) {
 /*
 id de la playlist
 */
-func getListPlaylist(id string) {
-    playlist, err := getAllTracksPlaylist(id, 0)
+func getListPlaylist(id, token, tokentype string) {
+
+    playlist, err := getAllTracksPlaylist(token, tokentype, id, 0)
     if err != nil {
-        fmt.Printf("Erreru!!\n")
-        fmt.Printf("%+v", err)
-        return
+        //fmt.Printf("error:", err.Error())
+        log.Panic("error")
     }
+
     var find bool
     var tmp string
     MyResp.Todo = len(playlist.Items)
@@ -151,12 +167,29 @@ func getListPlaylist(id string) {
 }
 
 func formHandler (c *fiber.Ctx) error {
+    sess, _ := Session.Get(c)
+
+    if sess.Get("token") == nil {
+        log.Panic("Vous n’êtes pas connecté à Spotify.")
+    }
+
+    token := sess.Get("token").(string)
+    tokentype := sess.Get("tokentype").(string)
+    id := c.FormValue("id")
+
+    e := testSpotifyPlaylist(token, tokentype, id)
+    if e != nil {
+        log.Panic(e.Error())
+    }
+
+
     c.Set("Location", "/feudecamp.html")
-    go getListPlaylist(c.FormValue("id"))
+    go getListPlaylist(id, token, tokentype)
     return c.SendStatus(303)
 }
 
 func getNew(c *fiber.Ctx) error {
+    /* read session */
     c.JSON(MyResp)
     MyResp.Albums = nil
     MyResp.Artists = nil
@@ -167,12 +200,13 @@ func getNew(c *fiber.Ctx) error {
 func mytoken(c *fiber.Ctx) error {
     err := c.BodyParser(&SpotifyAPI)
     if err != nil {
-        Errors = err.Error()
+        log.Panic(err.Error())
     } else {
         sess, err := Session.Get(c)
         if err != nil {
-            Errors = err.Error()
+            log.Panic(err.Error())
         }
+
         sess.Set("token", SpotifyAPI.Token)
         sess.Set("expire", SpotifyAPI.ExpiresIn)
         sess.Set("tokentype", SpotifyAPI.TokenType)
@@ -180,7 +214,7 @@ func mytoken(c *fiber.Ctx) error {
         err = sess.Save()
 
         if err != nil {
-            fmt.Printf("%v+", err)
+            log.Panic(err.Error())
         }
     }
 
@@ -199,26 +233,18 @@ func spotifyCallback(c *fiber.Ctx) error {
 }
 
 func index(c *fiber.Ctx) error {
-    sess, err := Session.Get(c)
-    if err != nil {
-        Errors = err.Error()
+    sess, _ := Session.Get(c)
+
+    tmp := false
+    if sess.Get("token") != nil {
+        tmp = true
     }
 
     if Errors == "" {
-        tmp := false
-        if sess.Get("token") != nil {
-            tmp = true
-        }
-
         //return c.Render("index", fiber.Map{"connected": !SpotifyAPI.CheckEmpty(),
         return c.Render("index", fiber.Map{"connected": tmp,
         "url": SpotifyURL})
     } else {
-        tmp := false
-        if sess.Get("token") != nil {
-            tmp = true
-        }
-
         e := Errors
         Errors = ""
         return c.Render("index", fiber.Map{"connected": tmp,
@@ -230,6 +256,7 @@ func index(c *fiber.Ctx) error {
 func main() {
     //app := fiber.New(fiber.Config(Views: html, ViewsLayout: "layouts/main"))
     app := fiber.New(fiber.Config{Views: html.New("./views", ".html"),})
+    app.Use(recover.New())
     app.Static("/", "./static")
 
     app.Get("/", index)
@@ -238,5 +265,5 @@ func main() {
     app.Post("/back", formHandler)
     app.Get("/callback", spotifyCallback)
 
-    app.Listen(":8080")
+    log.Fatal(app.Listen(":8080"))
 }
