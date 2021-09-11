@@ -125,34 +125,31 @@ func getListPlaylist(id, token, tokentype string) {
     playlist := getAllTracksPlaylist(token, tokentype, id, 0)
 
     var find bool
-    var tmp string
+    var tmp, artist, album, urlSpotify string
     var MyResp = &RespBandcamp{}
     MyResp.Todo = len(playlist.Items)
     MyResp.Done = 0
     Queue[token] = MyResp
 
     for i := 0; i < len(playlist.Items); i++ {
-        find, tmp = searchAlbumBandcamp(playlist.Items[i].Track.Album.Name,
-            playlist.Items[i].Track.Album.Artists[0].Name)
+        album = playlist.Items[i].Track.Album.Name
+        artist = playlist.Items[i].Track.Album.Artists[0].Name
+        urlSpotify = playlist.Items[i].Track.Album.ExternalUrls.Spotify
+
+        if (MyResp.ContainsAlbum(album, artist)) {
+            MyResp.Todo--
+            continue
+        }
+
+        find, tmp = searchAlbumBandcamp(album, artist)
         if find {
-            MyResp.AddAlbum(newUrlBandcamp(
-                playlist.Items[i].Track.Album.Artists[0].Name,
-                playlist.Items[i].Track.Album.Name,
-                playlist.Items[i].Track.Album.ExternalUrls.Spotify,
-                tmp))
+            MyResp.AddAlbum(newUrlBandcamp(artist, album, urlSpotify, tmp))
         } else {
-            find, tmp = searchArtistBandcamp(playlist.Items[i].Track.Album.Artists[0].Name)
+            find, tmp = searchArtistBandcamp(artist)
             if find {
-                MyResp.AddArtist(newUrlBandcamp(
-                    playlist.Items[i].Track.Album.Artists[0].Name,
-                    playlist.Items[i].Track.Album.Name,
-                    playlist.Items[i].Track.Album.ExternalUrls.Spotify,
-                    tmp))
+                MyResp.AddArtist(newUrlBandcamp(artist, album, urlSpotify, tmp))
             } else {
-                MyResp.AddNotfound(newUrlWoBandcamp(
-                    playlist.Items[i].Track.Album.Artists[0].Name,
-                    playlist.Items[i].Track.Album.Name,
-                    playlist.Items[i].Track.Album.ExternalUrls.Spotify))
+                MyResp.AddNotfound(newUrlWoBandcamp(artist, album, urlSpotify))
             }
         }
 

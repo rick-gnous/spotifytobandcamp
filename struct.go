@@ -33,7 +33,50 @@ type RespBandcamp struct {
     Albums []UrlBandcamp  `json:"albums"`
     Artists []UrlBandcamp `json:"artists"`
     Notfound []UrlBandcamp `json:"notfound"`
+}
 
+func (rp *RespBandcamp) ContainsAlbum(album, artist string) bool {
+    ret := false
+
+    for _, elem := range rp.Albums {
+        if elem.Album == album && elem.Artiste == artist {
+            ret = true
+            break
+        }
+    }
+
+    if !ret {
+        for _, elem := range rp.Artists {
+            if elem.Album == album && elem.Artiste == artist {
+                ret = true
+                break
+            }
+        }
+    }
+
+    if !ret {
+        for _, elem := range rp.Notfound {
+            if elem.Album == album && elem.Artiste == artist {
+                ret = true
+                break
+            }
+        }
+    }
+
+    return ret
+}
+
+func (rp *RespBandcamp) ContainsArtist(artist string) bool {
+    ret := false
+
+    for _, elem := range rp.Artists {
+        if elem.Artiste == artist {
+            ret = true
+            break
+        }
+    }
+
+    return ret
 }
 
 func (rp *RespBandcamp) AddAlbum(tmp UrlBandcamp) []UrlBandcamp {
