@@ -42,7 +42,12 @@ func searchAlbumBandcamp(album string, artist string) (bool, string) {
         return false, ""
     }
 
-    if (strings.Contains(results[0].Title, album) || strings.Contains(album, results[0].Title)) && strings.Compare(results[0].Artist, artist) == 0 {
+    findAlbum := strings.ToLower(results[0].Title)
+    findArtist := strings.ToLower(results[0].Artist)
+    album = strings.ToLower(album)
+    artist = strings.ToLower(artist)
+
+    if (strings.Contains(findAlbum, album) || strings.Contains(album, findAlbum)) && strings.Compare(findArtist, artist) == 0 {
         return true, results[0].URL
     } else {
         return false, ""
@@ -58,7 +63,10 @@ func searchArtistBandcamp(artist string) (bool, string) {
         return false, ""
     }
 
-    if strings.Compare(results[0].Artist, artist) == 0 {
+    findArtist := strings.ToLower(results[0].Artist)
+    artist = strings.ToLower(artist)
+
+    if strings.Compare(findArtist, artist) == 0 {
         return true, strings.Split(results[0].URL, "/album/")[0]
     } else {
         return false, ""
